@@ -1,0 +1,89 @@
+<div class="board-container">
+  <div class="board-wrapper">
+    <div class="board-grid">
+      <div class="board-row" *ngFor="let row of getBoardRows(); trackBy: trackByRowIndex">
+        <div 
+          class="board-cell" 
+          *ngFor="let cell of row; trackBy: trackByNumber"
+          [style.background-color]="getCellColor(cell)"
+          [attr.data-cell-number]="cell.number"
+          [class.has-element]="hasSnakeOrLadder(cell.number)">
+          <span class="cell-number">{{ cell.number }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Snakes and Ladders Overlay -->
+    <svg class="snakes-ladders-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <defs>
+        <!-- Gradient for snakes -->
+        <linearGradient id="snakeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#dc3545;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#c82333;stop-opacity:1" />
+        </linearGradient>
+        
+        <!-- Gradient for ladders -->
+        <linearGradient id="ladderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#218838;stop-opacity:1" />
+        </linearGradient>
+
+        <!-- Arrow marker for snakes (pointing to end) -->
+        <marker id="snakeArrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L5,2.5 L0,5 Z" fill="#dc3545" />
+        </marker>
+
+        <!-- Arrow marker for ladders (pointing to end) -->
+        <marker id="ladderArrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L5,2.5 L0,5 Z" fill="#28a745" />
+        </marker>
+      </defs>
+      
+      <g *ngFor="let element of snakesAndLadders; trackBy: trackByElementId">
+        <!-- Draw path with arrow at end -->
+        <path 
+          [attr.d]="getSnakeOrLadderPath(element)"
+          [attr.stroke]="element.type === 'snake' ? 'url(#snakeGradient)' : 'url(#ladderGradient)'"
+          stroke-width="0.8"
+          fill="none"
+          stroke-dasharray="none"
+          [attr.marker-end]="element.type === 'snake' ? 'url(#snakeArrow)' : 'url(#ladderArrow)'"
+          class="element-path"
+          [class.snake-path]="element.type === 'snake'"
+          [class.ladder-path]="element.type === 'ladder'" />
+        
+        <!-- Start marker (origin point) -->
+        <circle 
+          [attr.cx]="(getCellPosition(element.startPosition)!.x + 0.5) * 10"
+          [attr.cy]="(9 - getCellPosition(element.startPosition)!.y + 0.5) * 10"
+          r="1.2"
+          stroke="white"
+          stroke-width="0.2"
+          [attr.fill]="getElementColor(element)"
+          opacity="0.9" />
+      </g>
+    </svg>
+
+    <!-- Static Token Overlay (shown after animation ends) -->
+    <div class="token-overlay" *ngIf="staticTokenPlayer && !isAnimating">
+      <div 
+        class="static-token"
+        [style.left.%]="staticTokenPosition.x"
+        [style.top.%]="staticTokenPosition.y">
+        <img src="red.svg" alt="Token" class="token-image">
+        <div class="player-name-label">{{ staticTokenPlayer.name }}</div>
+      </div>
+    </div>
+
+    <!-- Moving Token Overlay (shown during animation) -->
+    <div class="token-overlay" *ngIf="movingPlayer">
+      <div 
+        class="moving-token"
+        [style.left.%]="tokenPosition.x"
+        [style.top.%]="tokenPosition.y">
+        <img src="red.svg" alt="Token" class="token-image">
+        <div class="player-name-label">{{ movingPlayer.name }}</div>
+      </div>
+    </div>
+  </div>
+</div>

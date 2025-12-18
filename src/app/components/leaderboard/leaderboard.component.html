@@ -1,0 +1,83 @@
+<div class="leaderboard">
+  <h3 class="leaderboard-title">Bảng xếp hạng & Chọn mục tiêu</h3>
+  
+  <!-- Search input -->
+  <div class="search-container">
+    <input 
+      type="text" 
+      class="search-input"
+      [(ngModel)]="searchQuery"
+      (input)="onSearchChange()"
+      placeholder="Tìm kiếm theo tên..."
+      [disabled]="!canSelectTarget()"
+    />
+    @if (searchQuery) {
+      <button class="clear-search-btn" (click)="clearSearch()" title="Xóa tìm kiếm">✕</button>
+    }
+  </div>
+
+  @if (!canSelectTarget()) {
+    <div class="selection-hint disabled">
+      <span>⏳ Chờ lượt tiếp theo để chọn mục tiêu mới</span>
+    </div>
+  }
+  
+  <div class="leaderboard-container" #leaderboardContainer>
+    @if (leaderboardEntries.length === 0) {
+      <div class="empty-state">
+        <p>Chưa có người chơi</p>
+      </div>
+    }
+    
+    <div class="leaderboard-grid">
+      @for (entry of leaderboardEntries; track entry.playerId) {
+        <div 
+          class="leaderboard-item" 
+          [class.finished]="entry.isFinished"
+          [class.moving]="entry.isMoving"
+          [class.selected]="entry.isSelected"
+          [class.search-highlight]="isSearchMatch(entry.playerName)"
+          [class.winning-position]="isWinningPosition(entry.rank)"
+          [class.disabled]="!canSelectTarget() || entry.isFinished"
+          [id]="'leaderboard-' + entry.playerId"
+          (click)="selectTarget(entry.playerId)">
+          
+          <!-- Rank Badge -->
+          <div class="rank-badge" [ngClass]="getRankClass(entry.rank)">
+            @if (isWinningPosition(entry.rank)) {
+              <img 
+                class="winning-icon-img" 
+                [src]="entry.rank === 16 ? 'vm.png' : 'qua.png'" 
+                [alt]="entry.rank === 16 ? 'Vô địch' : 'Quà'"
+              />
+            }
+            {{ getRankDisplay(entry.rank) }}
+          </div>
+          
+          <!-- Player Info -->
+          <div class="player-info">
+            <div 
+              class="player-color-indicator" 
+              [style.background]="entry.playerColor">
+            </div>
+            <span class="player-name">{{ entry.playerName }}</span>
+          </div>
+          
+          <!-- Position -->
+          <div class="position-info">
+            @if (entry.isFinished) {
+              <span class="finished-badge">
+                <span class="checkmark">✓</span>
+                <span class="finish-time">{{ formatFinishTime(entry.finishTime) }}</span>
+              </span>
+            } @else {
+              <span class="position-value">{{ entry.currentPosition }}</span>
+            }
+          </div>
+          
+
+        </div>
+      }
+    </div>
+  </div>
+</div>

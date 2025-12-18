@@ -1,0 +1,33 @@
+<div class="dice-config">
+  <h4>Cấu hình xúc xắc</h4>
+  <div class="config-form">
+    <label for="maxPoints">Số điểm maximum:</label>
+    <input 
+      type="number" 
+      id="maxPoints"
+      [(ngModel)]="maxPoints" 
+      min="1"
+      [disabled]="isRolling"
+      (keyup.enter)="applyConfig()"
+      placeholder="Nhập số điểm (tối thiểu 1)">
+    <button 
+      (click)="applyConfig()" 
+      [disabled]="!isValidConfig() || isRolling"
+      class="apply-btn">
+      Áp dụng ngay
+    </button>
+  </div>
+  
+  <div class="current-config" *ngIf="currentMaxPoints">
+    <span class="label">Hiện tại:</span>
+    <span class="value">1-{{ currentMaxPoints }}</span>
+  </div>
+  
+  <div class="validation-message error" *ngIf="validationError">
+    {{ validationError }}
+  </div>
+  
+  <div class="validation-message success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+</div>

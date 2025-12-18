@@ -1,0 +1,27 @@
+<div class="dice-roller-list">
+  <h3 class="list-title">Người đổ xúc xắc</h3>
+  
+  <div class="player-list-container" #playerListContainer>
+    @if (sortedPlayers.length === 0) {
+      <div class="empty-state">
+        <p>Chưa có người chơi</p>
+      </div>
+    }
+    
+    <div class="player-grid">
+      @for (player of sortedPlayers; track player.id; let i = $index) {
+        <div 
+          class="player-item" 
+          [class.active]="isCurrentRoller(player.id)"
+          [id]="'player-' + player.id">
+          <span class="player-order">{{ i + 1 }}</span>
+          <div 
+            class="player-avatar" 
+            [style.background]="player.color">
+          </div>
+          <span class="player-name">{{ player.name }}</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

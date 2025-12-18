@@ -1,0 +1,9 @@
+# Ignore HTML files to prevent formatting issues
+*.html
+
+# Ignore build output
+dist/
+.angular/
+
+# Ignore dependencies
+node_modules/

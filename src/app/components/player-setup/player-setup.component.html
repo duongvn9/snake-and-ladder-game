@@ -1,0 +1,231 @@
+<div class="player-setup-container" role="main">
+  <!-- Header -->
+  <div class="setup-header">
+    <img src="DL-logo.svg" alt="DL Logo" class="dl-logo" />
+  </div>
+
+  <!-- Step 1: Initial Configuration -->
+  <div class="initial-config" *ngIf="!showPlayerNameForm">
+    <div class="config-card">
+      <h2>Cấu hình Game</h2>
+      <p class="instruction">
+        Nhập số lượng người chơi (tối thiểu {{ MIN_PLAYERS }}) và số lượng team ({{ MIN_TEAMS }}-{{ MAX_TEAMS }}).
+      </p>
+
+      <div class="form-group">
+        <label for="playerCount">Số lượng người chơi:</label>
+        <input
+          type="number"
+          id="playerCount"
+          name="playerCount"
+          [(ngModel)]="playerCount"
+          [min]="MIN_PLAYERS"
+          class="input-field"
+          [class.error]="playerCountError"
+          placeholder="Ví dụ: 34"
+          autocomplete="off"
+        />
+        <div class="error-message" *ngIf="playerCountError">{{ playerCountError }}</div>
+      </div>
+
+      <div class="form-group">
+        <label for="teamCount">Số lượng team:</label>
+        <input
+          type="number"
+          id="teamCount"
+          name="teamCount"
+          [(ngModel)]="teamCount"
+          [min]="MIN_TEAMS"
+          [max]="MAX_TEAMS"
+          class="input-field"
+          [class.error]="teamCountError"
+          (keyup.enter)="onPlayerCountSubmit()"
+          placeholder="Ví dụ: 7"
+          autocomplete="off"
+        />
+        <div class="error-message" *ngIf="teamCountError">{{ teamCountError }}</div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn btn-primary" (click)="onPlayerCountSubmit()">
+          Tiếp theo
+        </button>
+        <button type="button" class="btn btn-demo" (click)="insertDemoData()">
+          Insert 2025 Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Main Configuration Grid (3 columns) -->
+  <div class="main-config-grid" *ngIf="showPlayerNameForm">
+    <form (ngSubmit)="onPlayerNamesSubmit()" class="config-form" novalidate>
+      
+      <!-- Column 1: Team Colors -->
+      <div class="config-card team-colors-card">
+        <h3>🎨 Màu sắc Team</h3>
+        <p class="card-instruction">Chọn màu cho mỗi team</p>
+        
+        <div class="team-colors-list">
+          <div class="team-color-row" *ngFor="let team of teams; let i = index">
+            <span class="team-label">Team {{ i + 1 }}:</span>
+            <div class="color-picker">
+              <button 
+                *ngFor="let color of availableColors"
+                type="button"
+                class="color-btn"
+                [style.background]="color.value"
+                [class.selected]="team.color === color.value"
+                [class.disabled]="isColorUsed(color.value, team.id)"
+                [disabled]="isColorUsed(color.value, team.id)"
+                (click)="selectTeamColor(team.id, color.value)"
+                [attr.title]="color.name">
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2: Player Names -->
+      <div class="config-card player-names-card">
+        <h3>👥 Nhập tên người chơi</h3>
+        <p class="card-instruction">{{ playerNames.length }} người chơi</p>
+
+        <div class="general-error" *ngIf="generalError">{{ generalError }}</div>
+
+        <div class="player-inputs-container">
+          <div class="player-row" *ngFor="let player of playerNames; let i = index">
+            <input
+              type="number"
+              class="order-input"
+              [class.order-duplicate]="isDuplicateOrder(i)"
+              [(ngModel)]="player.order"
+              [name]="'order-' + i"
+              [min]="1"
+              [max]="playerNames.length"
+              placeholder=""
+              title="Nhập số thứ tự chơi"
+            />
+            <input
+              type="text"
+              [id]="'player-' + i"
+              [name]="'player-' + i"
+              [(ngModel)]="player.name"
+              class="input-field player-name-input"
+              [class.error]="player.error"
+              [class.valid]="player.name.trim() && !player.error"
+              (blur)="onPlayerNameBlur(i)"
+              (input)="onPlayerNameInput(i)"
+              placeholder="Tên người chơi"
+              maxlength="50"
+              autocomplete="off"
+            />
+            <select
+              [id]="'team-' + i"
+              [name]="'team-' + i"
+              [(ngModel)]="player.teamId"
+              class="team-dropdown"
+            >
+              <option *ngFor="let team of teams; let j = index" [value]="team.id">
+                T{{ j + 1 }}
+              </option>
+            </select>
+            <span 
+              class="team-color-dot" 
+              [style.background]="getTeamById(player.teamId)?.color || '#ccc'">
+            </span>
+            <button 
+              type="button" 
+              class="delete-btn" 
+              (click)="removePlayer(i)"
+              title="Xóa người chơi">✕</button>
+            <div class="player-error" *ngIf="player.error">{{ player.error }}</div>
+          </div>
+        </div>
+        
+        <!-- Add player button -->
+        <div class="add-player-section">
+          <button type="button" class="btn btn-add-player" (click)="addPlayer()">
+            + Thêm người chơi
+          </button>
+        </div>
+      </div>
+
+      <!-- Column 3: Game Settings (Map Type + Winning Positions + Actions) -->
+      <div class="config-card game-settings-card">
+        <!-- Map Type Section -->
+        <div class="settings-section map-type-section">
+          <h3>🗺️ Chế độ Map</h3>
+          <div class="map-options">
+            <label class="radio-option">
+              <input type="radio" name="mapType" value="random" [(ngModel)]="mapType" />
+              <span class="option-label">Random Map</span>
+              <span class="map-description">Vị trí rắn và thang ngẫu nhiên</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="mapType" value="fixed" [(ngModel)]="mapType" />
+              <span class="option-label">Fixed Map</span>
+              <span class="map-description">Vị trí rắn và thang cố định</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Winning Positions Section -->
+        <div class="settings-section winning-positions-section">
+          <h3>🏆 Vị trí chiến thắng</h3>
+          <p class="card-instruction" *ngIf="showDefault16">Vị trí 16 mặc định (Kỷ niệm 16 năm)</p>
+          <p class="card-instruction" *ngIf="!showDefault16">Nhập vị trí từ 1-{{ playerCount }}</p>
+
+          <div class="positions-display">
+            <span class="position-badge default" *ngIf="showDefault16">🏆 #16</span>
+            <span class="position-badge additional" *ngFor="let pos of additionalWinningPositions">
+              ⭐ #{{ pos }}
+              <button type="button" class="remove-btn" (click)="removeWinningPosition(pos)">✕</button>
+            </span>
+            <span class="no-positions" *ngIf="!showDefault16 && additionalWinningPositions.length === 0">
+              Chưa có vị trí nào
+            </span>
+          </div>
+
+          <div class="add-position-row">
+            <input
+              type="number"
+              class="input-field position-input"
+              [(ngModel)]="newWinningPosition"
+              [name]="'newWinningPosition'"
+              (input)="onWinningPositionInput()"
+              (keyup.enter)="addWinningPosition()"
+              [min]="1"
+              [max]="playerCount"
+              placeholder="Vị trí"
+              [class.error]="winningPositionError"
+            />
+            <button
+              type="button"
+              class="btn btn-add"
+              (click)="addWinningPosition()"
+              [disabled]="!isValidWinningPosition()">
+              + Thêm
+            </button>
+          </div>
+          <div class="error-message" *ngIf="winningPositionError">{{ winningPositionError }}</div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons-section">
+          <button type="button" class="btn btn-secondary" (click)="goBackToPlayerCount()">
+            ← Quay lại
+          </button>
+          <button type="submit" class="btn btn-primary btn-start">
+            🎮 Bắt đầu chơi
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>

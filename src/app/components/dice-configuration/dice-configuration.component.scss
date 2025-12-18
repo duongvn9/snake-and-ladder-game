@@ -1,0 +1,189 @@
+.dice-config {
+    padding: 1rem;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    h4 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .config-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="number"] {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+
+            &:focus {
+                outline: none;
+                border-color: #4CAF50;
+            }
+
+            &:disabled {
+                background-color: #f5f5f5;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            &::placeholder {
+                color: #999;
+                font-size: 0.9rem;
+            }
+        }
+
+        .apply-btn {
+            padding: 0.6rem 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+
+            &:hover:not(:disabled) {
+                background-color: #45a049;
+            }
+
+            &:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            &:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+        }
+    }
+
+    .current-config {
+        padding: 0.75rem;
+        background-color: #f0f8ff;
+        border-left: 3px solid #2196F3;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+
+        .label {
+            font-weight: 600;
+            color: #555;
+            margin-right: 0.5rem;
+        }
+
+        .value {
+            font-weight: 700;
+            color: #2196F3;
+            font-size: 1rem;
+        }
+    }
+
+    .validation-message {
+        padding: 0.75rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        animation: slideIn 0.3s ease-out;
+
+        &.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 3px solid #c62828;
+        }
+
+        &.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 3px solid #2e7d32;
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .dice-config {
+        padding: 0.75rem;
+
+        h4 {
+            font-size: 1rem;
+        }
+
+        .config-form {
+            gap: 0.5rem;
+
+            input[type="number"],
+            .apply-btn {
+                font-size: 0.9rem;
+            }
+        }
+
+        .current-config {
+            padding: 0.5rem;
+            font-size: 0.85rem;
+
+            .value {
+                font-size: 0.95rem;
+            }
+        }
+
+        .validation-message {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+}
+
+// Compact layout for small screens
+@media (max-width: 480px) {
+    .dice-config {
+        padding: 0.5rem;
+
+        h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .config-form {
+            gap: 0.4rem;
+
+            label {
+                font-size: 0.85rem;
+            }
+
+            input[type="number"],
+            .apply-btn {
+                padding: 0.4rem;
+                font-size: 0.85rem;
+            }
+        }
+    }
+}

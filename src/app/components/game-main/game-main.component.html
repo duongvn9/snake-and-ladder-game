@@ -1,0 +1,263 @@
+<div class="game-main-container">
+  <!-- Error Boundary -->
+  @if (hasError) {
+    <div class="error-boundary-wrapper">
+      <app-error-boundary
+        title="Lỗi tải game"
+        [message]="errorMessage"
+        [details]="errorDetails"
+        [showDetails]="true"
+        (retry)="onErrorRetry()"
+        (reset)="onErrorReset()">
+      </app-error-boundary>
+    </div>
+  }
+
+  <!-- Loading Overlay -->
+  @if (isLoading && !hasError) {
+    <div class="loading-overlay-container">
+      <div class="loading-content">
+        <div class="loading-spinner-large"></div>
+        <p class="loading-text">Đang tải game...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Header - same style as setup with action buttons -->
+  <div class="setup-header">
+    <div class="header-left">
+      <button class="header-btn config-btn" (click)="openConfigModal()" title="Cấu hình xúc xắc" [disabled]="isLoading || isRolling">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">Cấu hình</span>
+      </button>
+      <div class="round-badge">
+        <span class="round-label">Round</span>
+        <span class="round-number">{{ currentRound }}</span>
+      </div>
+    </div>
+    <div class="header-center">
+      <img [src]="dlLogoPath" alt="DL Logo" class="dl-logo" />
+    </div>
+    <div class="header-right">
+      <button class="header-btn reset-btn" (click)="showResetDialog()" title="Khởi động lại game" [disabled]="isLoading || isRolling">
+        <img [src]="restartIconPath" alt="Reset" class="btn-icon-img">
+        <span class="btn-text">Khởi động lại</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main game layout - 3 columns with ratio 3:4:5 -->
+  <main class="game-layout" [class.loading]="isLoading">
+    <!-- Column 1: Dice Roller List (3 parts) -->
+    <section class="column column-dice">
+      <div class="dice-roller-section">
+        <app-dice-roller-list></app-dice-roller-list>
+      </div>
+    </section>
+
+    <!-- Column 2: Leaderboard with Target Selection (4 parts) -->
+    <section class="column column-leaderboard">
+      <app-leaderboard></app-leaderboard>
+    </section>
+
+    <!-- Column 3: Board with Dice Action (5 parts) -->
+    <section class="column column-board">
+      <div class="board-section">
+        <app-board></app-board>
+      </div>
+      
+      <!-- Dice Roll Button and Result - Below Board -->
+      <div class="dice-action-section">
+        @if (showDiceAnimation) {
+          <div class="dice-animation">
+            <img [src]="diceAnimationPath" alt="Rolling dice..." class="dice-gif">
+          </div>
+        } @else if (showDiceResult && lastDiceResult !== null) {
+          <div class="dice-result">
+            <app-dice-display [value]="lastDiceResult"></app-dice-display>
+          </div>
+        }
+        
+        <button 
+          class="roll-dice-btn" 
+          [disabled]="!canRollDice"
+          (click)="onRollDice()"
+          [class.rolling]="isRolling">
+          @if (isRolling) {
+            <span>Đang tung...</span>
+          } @else {
+            <span>🎲 Tung xúc xắc</span>
+          }
+        </button>
+        
+        @if (diceRollCountdown > 0 && !isRolling && selectedTarget) {
+          <div class="dice-countdown" [class.urgent]="diceRollCountdown <= 3">
+            <span class="countdown-circle">{{ diceRollCountdown }}</span>
+            <span class="countdown-text">Thời gian còn lại</span>
+          </div>
+        }
+        
+        @if (diceRollTimeExpired && !isRolling && selectedTarget) {
+          <div class="dice-time-expired">
+            <span class="expired-icon">⏰</span>
+            <span class="expired-text">Tung điiiiiiiiii</span>
+          </div>
+        }
+        
+        @if (!selectedTarget && !isRolling) {
+          <p class="hint-text">Chọn người chơi mục tiêu để tung xúc xắc</p>
+        }
+      </div>
+    </section>
+  </main>
+
+  <!-- Game Finished Overlay -->
+  @if (isGameFinished) {
+    <div class="game-finished-overlay">
+      <div class="game-finished-content">
+        <h2>🏆 Game kết thúc!</h2>
+        <p>Tất cả người chơi đã hoàn thành. Xem bảng xếp hạng cuối cùng.</p>
+        <button class="new-game-btn" (click)="showResetDialog()">
+          Chơi game mới
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Reset Confirmation Dialog -->
+  @if (showResetConfirmation) {
+    <div class="modal-overlay" (click)="cancelReset()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h3>Xác nhận khởi động lại</h3>
+        <p>Bạn có chắc chắn muốn khởi động lại game? Tất cả dữ liệu hiện tại sẽ bị xóa.</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" (click)="cancelReset()">Hủy</button>
+          <button class="btn-confirm" (click)="confirmReset()">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Ladder Choice Modal (Requirements 12.2) -->
+  @if (showLadderChoiceModal && currentLadder) {
+    <div class="modal-overlay ladder-modal-overlay">
+      <div class="modal-content ladder-choice-modal" (click)="$event.stopPropagation()">
+        <div class="ladder-modal-header">
+          <span class="ladder-icon">🪜</span>
+          <h3>{{ ladderChoicePlayerName }} đang ở chân thang!</h3>
+        </div>
+        <div class="ladder-modal-body">
+          <p class="ladder-question">Có muốn leo lên đỉnh thang không?</p>
+          <div class="ladder-info">
+            <span class="from-position">Ô {{ currentLadder.startPosition }}</span>
+            <span class="arrow">→</span>
+            <span class="to-position">Ô {{ currentLadder.endPosition }}</span>
+          </div>
+          <div class="ladder-countdown" [class.urgent]="ladderCountdown <= 2">
+            <span class="countdown-label">Tự động leo sau:</span>
+            <span class="countdown-value">{{ ladderCountdown }}s</span>
+          </div>
+        </div>
+        <div class="ladder-modal-actions">
+          <button class="btn-stay" (click)="onDeclineLadder()">
+            Ở lại
+          </button>
+          <button class="btn-climb" (click)="onAcceptLadder()">
+            Leo thang 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Dice Configuration Modal -->
+  @if (showConfigModal) {
+    <div class="modal-overlay config-modal-overlay" (click)="closeConfigModal()">
+      <div class="modal-content config-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>⚙️ Cấu hình xúc xắc</h3>
+          <button class="close-btn" (click)="closeConfigModal()" title="Đóng">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="config-row">
+            <label for="modalMaxPoints">Số điểm maximum:</label>
+            <input 
+              type="number" 
+              id="modalMaxPoints"
+              [(ngModel)]="configMaxPoints" 
+              min="1"
+              (keyup.enter)="applyConfigFromModal()"
+              placeholder="Nhập số điểm (tối thiểu 1)">
+          </div>
+          <div class="config-row current-info">
+            <span class="label">Hiện tại:</span>
+            <span class="value">1-{{ currentMaxPoints }}</span>
+          </div>
+          <div class="config-row round-info">
+            <span class="label">Round hiện tại:</span>
+            <span class="value round-value">{{ currentRound }}</span>
+          </div>
+          @if (pendingMaxPoints !== null) {
+            <div class="pending-info">
+              <span class="pending-icon">⏳</span>
+              <span>Cấu hình mới (1-{{ pendingMaxPoints }}) sẽ áp dụng từ round {{ currentRound + 1 }}</span>
+            </div>
+          }
+          @if (configValidationError) {
+            <div class="validation-message error">
+              {{ configValidationError }}
+            </div>
+          }
+          @if (configSuccessMessage) {
+            <div class="validation-message success">
+              {{ configSuccessMessage }}
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeConfigModal()">Đóng</button>
+          <button class="btn-apply-next-round" (click)="applyConfigFromModal()" [disabled]="!isValidModalConfig()">
+            Áp dụng từ round sau
+          </button>
+          <button class="btn-apply-immediate" (click)="applyConfigImmediate()" [disabled]="!isValidModalConfig()">
+            Áp dụng ngay
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Finish Celebration Modal -->
+  @if (showFinishModal) {
+    <div class="modal-overlay finish-modal-overlay" (click)="closeFinishModal()">
+      <div class="modal-content finish-modal" [class.special-win]="finishIsSpecialWin" (click)="$event.stopPropagation()">
+        <div class="finish-modal-content">
+          @if (finishIsSpecialWin) {
+            <div class="confetti-container">
+              <span class="confetti">🎊</span>
+              <span class="confetti">🎉</span>
+              <span class="confetti">✨</span>
+              <span class="confetti">🎊</span>
+              <span class="confetti">🎉</span>
+            </div>
+            <div class="trophy-icon">🏆</div>
+            <h2 class="finish-title special">CHÚC MỪNG!</h2>
+            <p class="player-name-highlight">{{ finishPlayerName }}</p>
+            @if (finishPlayerRank === 16) {
+              <p class="finish-message special">Về đích ở vị trí <span class="rank-badge special">#{{ finishPlayerRank }}</span></p>
+              <p class="special-note">🎂 Kỷ niệm 16 năm DL! 🎂</p>
+            } @else {
+              <p class="finish-message special">Về đích ở vị trí chiến thắng đặc biệt <span class="rank-badge special">#{{ finishPlayerRank }}</span></p>
+            }
+          } @else {
+            <div class="finish-icon">🎉</div>
+            <h2 class="finish-title">Hoàn thành!</h2>
+            <p class="player-name-highlight">{{ finishPlayerName }}</p>
+            <p class="finish-message">Về đích ở vị trí <span class="rank-badge">#{{ finishPlayerRank }}</span></p>
+          }
+        </div>
+        <button class="close-finish-btn" (click)="closeFinishModal()">Đóng</button>
+      </div>
+    </div>
+  }
+</div>
