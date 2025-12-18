@@ -23,7 +23,7 @@ export const DEMO_PLAYERS: DemoPlayer[] = [
   // Team 2 (5 người)
   { name: 'Mr. Linh', teamIndex: 1 },
   { name: 'Mr. Lâm', teamIndex: 1 },
-  { name: 'Mr. Đức', teamIndex: 1 },
+  { name: 'Mr. Đức Soft', teamIndex: 1 },
   { name: 'Mr. Đông', teamIndex: 1 },
   { name: 'Mr. Dũng Soft', teamIndex: 1 },
   
