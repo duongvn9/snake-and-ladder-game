@@ -5,7 +5,8 @@ import {Router} from '@angular/router';
 import {GameService} from '../../services/game.service';
 import {StorageService} from '../../services/storage.service';
 import {NotificationService} from '../../services/notification.service';
-import {generateSnakesAndLadders} from '../../utils/board-layout.util';
+import {generateSnakesAndLadders, generateBoardLayout, BoardCell} from '../../utils/board-layout.util';
+import {SnakeOrLadder} from '../../models/snake-or-ladder.model';
 import {InvalidPlayerNameError, DuplicatePlayerNameError} from '../../models/player.model';
 import {InvalidPlayerCountError} from '../../models/game-state.model';
 import {Team, AVAILABLE_COLORS, createTeams, InvalidTeamCountError} from '../../models/team.model';
@@ -53,7 +54,25 @@ export class PlayerSetupComponent implements OnInit {
     winningPositionError: string | null = null;
 
     // Map type selection (Requirements 6.1.1, 6.1.2)
-    mapType: MapType = DEFAULT_MAP_TYPE;
+    private _mapType: MapType = DEFAULT_MAP_TYPE;
+    
+    get mapType(): MapType {
+        return this._mapType;
+    }
+    
+    set mapType(value: MapType) {
+        if (this._mapType !== value) {
+            this._mapType = value;
+            // Reset preview when map type changes
+            this.previewSnakesAndLadders = [];
+        }
+    }
+
+    // Map preview modal
+    showMapPreview: boolean = false;
+    previewBoardLayout: BoardCell[] = [];
+    previewSnakesAndLadders: SnakeOrLadder[] = [];
+    previewBoardRows: BoardCell[][] = [];
 
     constructor(
         private gameService: GameService,
@@ -198,6 +217,8 @@ export class PlayerSetupComponent implements OnInit {
         this.playerNames = [];
         this.teams = [];
         this.generalError = null;
+        // Reset preview map when going back
+        this.previewSnakesAndLadders = [];
     }
 
     /**
@@ -286,9 +307,16 @@ export class PlayerSetupComponent implements OnInit {
             );
 
             // Generate snakes and ladders based on map type (Requirements 6.1.3)
-            const snakesAndLadders = this.mapType === 'fixed' 
-              ? [...FIXED_MAP_CONFIG] // Use fixed map configuration
-              : generateSnakesAndLadders(); // Use random generation
+            // Use previewed map if available, otherwise generate new one
+            let snakesAndLadders: SnakeOrLadder[];
+            if (this.mapType === 'fixed') {
+              snakesAndLadders = [...FIXED_MAP_CONFIG];
+            } else {
+              // Use previewed random map if available, otherwise generate new
+              snakesAndLadders = this.previewSnakesAndLadders.length > 0 
+                ? [...this.previewSnakesAndLadders]
+                : generateSnakesAndLadders();
+            }
 
             // Get all winning positions (Requirements 13.7)
             const winningPositions = this.allWinningPositions;
@@ -504,5 +532,112 @@ export class PlayerSetupComponent implements OnInit {
             .map(p => p.order)
             .filter(o => o !== null);
         return new Set(orders).size !== orders.length;
+    }
+
+    // ============ Map Preview Methods ============
+
+    /**
+     * Open map preview modal
+     */
+    openMapPreview(): void {
+        // Generate board layout
+        this.previewBoardLayout = generateBoardLayout();
+        this.previewBoardRows = this.getPreviewBoardRows();
+        
+        // Generate snakes and ladders based on map type
+        if (this.mapType === 'fixed') {
+            this.previewSnakesAndLadders = [...FIXED_MAP_CONFIG];
+        } else {
+            this.previewSnakesAndLadders = generateSnakesAndLadders();
+        }
+        
+        this.showMapPreview = true;
+    }
+
+    /**
+     * Close map preview modal
+     */
+    closeMapPreview(): void {
+        this.showMapPreview = false;
+    }
+
+    /**
+     * Regenerate random map for preview
+     */
+    regenerateRandomMap(): void {
+        if (this.mapType === 'random') {
+            this.previewSnakesAndLadders = generateSnakesAndLadders();
+        }
+    }
+
+    /**
+     * Get board rows for preview display
+     */
+    getPreviewBoardRows(): BoardCell[][] {
+        const rows: BoardCell[][] = [];
+        for (let y = 9; y >= 0; y--) {
+            const rowCells = this.previewBoardLayout
+                .filter(cell => cell.y === y)
+                .sort((a, b) => a.x - b.x);
+            rows.push(rowCells);
+        }
+        return rows;
+    }
+
+    /**
+     * Get cell color for preview
+     */
+    getPreviewCellColor(cell: BoardCell): string {
+        const isEven = (cell.x + cell.y) % 2 === 0;
+        return isEven ? '#f0e6d2' : '#d4c4a8';
+    }
+
+    /**
+     * Get cell position for preview
+     */
+    getPreviewCellPosition(cellNumber: number): { x: number; y: number } | null {
+        const cell = this.previewBoardLayout.find(c => c.number === cellNumber);
+        return cell ? { x: cell.x, y: cell.y } : null;
+    }
+
+    /**
+     * Get SVG path for snake or ladder in preview
+     */
+    getPreviewPath(element: SnakeOrLadder): string {
+        const startPos = this.getPreviewCellPosition(element.startPosition);
+        const endPos = this.getPreviewCellPosition(element.endPosition);
+        
+        if (!startPos || !endPos) return '';
+        
+        const startX = (startPos.x + 0.5) * 10;
+        const startY = (9 - startPos.y + 0.5) * 10;
+        const endX = (endPos.x + 0.5) * 10;
+        const endY = (9 - endPos.y + 0.5) * 10;
+        
+        if (element.type === 'ladder') {
+            return `M ${startX} ${startY} L ${endX} ${endY}`;
+        } else {
+            const hashCode = element.id.split('').reduce((acc, char) => {
+                return ((acc << 5) - acc) + char.charCodeAt(0);
+            }, 0);
+            const normalizedHash = (hashCode % 100) / 100;
+            const controlX = (startX + endX) / 2 + (normalizedHash - 0.5) * 10;
+            const controlY = (startY + endY) / 2 + ((hashCode % 50) / 50 - 0.5) * 10;
+            return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+        }
+    }
+
+    /**
+     * Get ladder count for preview legend
+     */
+    getPreviewLadderCount(): number {
+        return this.previewSnakesAndLadders.filter(e => e.type === 'ladder').length;
+    }
+
+    /**
+     * Get snake count for preview legend
+     */
+    getPreviewSnakeCount(): number {
+        return this.previewSnakesAndLadders.filter(e => e.type === 'snake').length;
     }
 }

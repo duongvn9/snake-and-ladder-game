@@ -165,6 +165,9 @@
               <span class="map-description">Vị trí rắn và thang cố định</span>
             </label>
           </div>
+          <button type="button" class="btn btn-preview" (click)="openMapPreview()">
+            👁️ Xem trước Map
+          </button>
         </div>
 
         <div class="section-divider"></div>
@@ -224,5 +227,88 @@
       </div>
 
     </form>
+  </div>
+</div>
+
+
+<!-- Map Preview Modal -->
+<div class="map-preview-modal" *ngIf="showMapPreview" (click)="closeMapPreview()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ mapType === 'fixed' ? '🗺️ Fixed Map' : '🎲 Random Map' }}</h3>
+      <button type="button" class="close-btn" (click)="closeMapPreview()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="preview-board-container">
+        <div class="preview-board-wrapper">
+          <div class="preview-board-grid">
+            <div class="preview-board-row" *ngFor="let row of previewBoardRows">
+              <div 
+                class="preview-board-cell" 
+                *ngFor="let cell of row"
+                [style.background-color]="getPreviewCellColor(cell)">
+                <span class="preview-cell-number">{{ cell.number }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Snakes and Ladders Overlay -->
+          <svg class="preview-snakes-ladders-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="previewSnakeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#dc3545;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#c82333;stop-opacity:1" />
+              </linearGradient>
+              <linearGradient id="previewLadderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#218838;stop-opacity:1" />
+              </linearGradient>
+              <marker id="previewSnakeArrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L5,2.5 L0,5 Z" fill="#dc3545" />
+              </marker>
+              <marker id="previewLadderArrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L5,2.5 L0,5 Z" fill="#28a745" />
+              </marker>
+            </defs>
+            
+            <g *ngFor="let element of previewSnakesAndLadders">
+              <path 
+                [attr.d]="getPreviewPath(element)"
+                [attr.stroke]="element.type === 'snake' ? 'url(#previewSnakeGradient)' : 'url(#previewLadderGradient)'"
+                stroke-width="0.8"
+                fill="none"
+                [attr.marker-end]="element.type === 'snake' ? 'url(#previewSnakeArrow)' : 'url(#previewLadderArrow)'"
+                class="preview-element-path" />
+              
+              <circle 
+                [attr.cx]="(getPreviewCellPosition(element.startPosition)!.x + 0.5) * 10"
+                [attr.cy]="(9 - getPreviewCellPosition(element.startPosition)!.y + 0.5) * 10"
+                r="1.2"
+                stroke="white"
+                stroke-width="0.2"
+                [attr.fill]="element.type === 'snake' ? '#dc3545' : '#28a745'"
+                opacity="0.9" />
+            </g>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="preview-legend">
+        <div class="legend-item">
+          <span class="legend-color ladder"></span>
+          <span>Thang ({{ getPreviewLadderCount() }})</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color snake"></span>
+          <span>Rắn ({{ getPreviewSnakeCount() }})</span>
+        </div>
+      </div>
+      
+      <div class="preview-actions" *ngIf="mapType === 'random'">
+        <button type="button" class="btn btn-secondary" (click)="regenerateRandomMap()">
+          🔄 Tạo map mới
+        </button>
+      </div>
+    </div>
   </div>
 </div>
