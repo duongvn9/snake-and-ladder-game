@@ -49,6 +49,7 @@ export class GameMainComponent implements OnInit, OnDestroy {
   
   showResetConfirmation = false;
   isGameFinished = false;
+  showGameFinishedModal = true;
 
   // Dice Configuration Modal state
   showConfigModal = false;
@@ -737,6 +738,13 @@ export class GameMainComponent implements OnInit, OnDestroy {
       this.finishModalResolver();
       this.finishModalResolver = undefined;
     }
+  }
+
+  /**
+   * Close game finished modal to view leaderboard
+   */
+  closeGameFinishedModal(): void {
+    this.showGameFinishedModal = false;
   }
 
   /**

@@ -120,14 +120,20 @@
   </main>
 
   <!-- Game Finished Overlay -->
-  @if (isGameFinished) {
-    <div class="game-finished-overlay">
-      <div class="game-finished-content">
+  @if (isGameFinished && showGameFinishedModal) {
+    <div class="game-finished-overlay" (click)="closeGameFinishedModal()">
+      <div class="game-finished-content" (click)="$event.stopPropagation()">
+        <button class="close-btn" (click)="closeGameFinishedModal()" title="Đóng">✕</button>
         <h2>🏆 Game kết thúc!</h2>
         <p>Tất cả người chơi đã hoàn thành. Xem bảng xếp hạng cuối cùng.</p>
-        <button class="new-game-btn" (click)="showResetDialog()">
-          Chơi game mới
-        </button>
+        <div class="game-finished-actions">
+          <button class="view-leaderboard-btn" (click)="closeGameFinishedModal()">
+            Xem bảng xếp hạng
+          </button>
+          <button class="new-game-btn" (click)="showResetDialog()">
+            Chơi game mới
+          </button>
+        </div>
       </div>
     </div>
   }
